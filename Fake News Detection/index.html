@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fake News Classifier</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Times New Roman';
+      background: linear-gradient(to right, #6c63ff, #4a47a3);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      color: #333;
+      max-width: 700px;
+      width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      padding: 2em;
+    }
+
+    header {
+      text-align: center;
+      background: #6c63ff;
+      color: #fff;
+      padding: 1em;
+    }
+
+    form label {
+      display: block;
+      margin: 1em 0 0.5em;
+      font-weight: bold;
+      color: #6c63ff;
+    }
+
+    form select, form textarea, form button {
+      width: 100%;
+      padding: 0.8em;
+      margin-bottom: 1em;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    form button {
+      background: #6c63ff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    form button:hover {
+      background: #534ec1;
+    }
+
+    #loading-spinner {
+      display: none;
+      text-align: center;
+      font-size: 1.2rem;
+      color: #6c63ff;
+    }
+
+    #result {
+      margin-top: 1.5em;
+      text-align: center;
+    }
+
+    #result p {
+      font-size: 1.2rem;
+      margin-top: 1em;
+    }
+
+    .fake {
+      color: red;
+    }
+
+    .not-fake {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Fake News Classifier</h1>
+    </header>
+    <main>
+      <form>
+        <label for="model-select">Choose a Model:</label>
+        <select id="model-select" onchange="showModelDescription()">
+          <option value="" disabled selected>Select Model</option>
+          <option value="model1">Logistic Regression</option>
+          <option value="model2">Decision Tree</option>
+          <option value="model3">Gradient Boosting</option>
+          <option value="model4">Random Forest</option>
+        </select>
+        <p id="model-description"></p>
+
+        <label for="news-input">Enter News Content:</label>
+        <textarea id="news-input" rows="6" placeholder="Type the news content here..." required></textarea>
+        <button type="button" id="classify-btn">Classify</button>
+      </form>
+
+      <div id="loading-spinner">Loading...</div>
+
+      <section id="result">
+        <p id="output">The result will be displayed here.</p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    function showModelDescription() {
+      const descriptions = {
+        model1: "Logistic Regression: Linear model for binary classification.",
+        model2: "Decision Tree: Simple tree-based classification.",
+        model3: "Gradient Boosting: Ensemble model for improved accuracy.",
+        model4: "Random Forest: Multiple decision trees for robust predictions."
+      };
+      const modelSelect = document.getElementById("model-select");
+      const description = descriptions[modelSelect.value] || "";
+      document.getElementById("model-description").innerText = description;
+    }
+
+    document.getElementById("classify-btn").addEventListener("click", async () => {
+      const model = document.getElementById("model-select").value;
+      const newsContent = document.getElementById("news-input").value.trim();
+      const output = document.getElementById("output");
+      const spinner = document.getElementById("loading-spinner");
+
+      if (!model || !newsContent) {
+        alert("Please select a model and enter news content.");
+        return;
+      }
+
+      spinner.style.display = "block";
+      output.innerText = "";
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/classify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model, news_content: newsContent }),
+        });
+
+        const data = await response.json();
+        spinner.style.display = "none";
+
+        if (data.error) {
+          output.innerText = `Error: ${data.error}`;
+          output.className = "";
+        } else {
+          output.innerText = `Result: ${data.result}`;
+          output.className = data.result === "Fake News" ? "fake" : "not-fake";
+        }
+      } catch (error) {
+        spinner.style.display = "none";
+        output.innerText = "Error: Unable to connect to the server.";
+      }
+    });
+  </script>
+</body>
+</html>
